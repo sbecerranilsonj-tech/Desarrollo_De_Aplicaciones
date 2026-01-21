@@ -1,0 +1,220 @@
+CREATE DATABASE fitness_br;
+USE fitness_br;
+
+.........................
+-- TABLA PERSONA (BASE)
+.........................
+CREATE TABLE persona (
+    id_persona INT AUTO_INCREMENT PRIMARY KEY,
+    dni VARCHAR(15) UNIQUE NOT NULL,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion VARCHAR(150)
+);
+
+.........................
+-- CLIENTE Y TRABAJADOR
+.........................
+CREATE TABLE cliente (
+    id_cliente INT AUTO_INCREMENT PRIMARY KEY,
+    id_persona INT NOT NULL,
+    fecha_registro DATE,
+    FOREIGN KEY (id_persona) REFERENCES persona(id_persona)
+);
+
+CREATE TABLE trabajador (
+    id_trabajador INT AUTO_INCREMENT PRIMARY KEY,
+    id_persona INT NOT NULL,
+    fecha_ingreso DATE,
+    salario DECIMAL(10,2),
+    FOREIGN KEY (id_persona) REFERENCES persona(id_persona)
+);
+
+........................
+-- TIPOS DE CLIENTE
+........................
+CREATE TABLE miembro (
+    id_miembro INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    tipo_membresia VARCHAR(50),
+    fecha_inicio DATE,
+    fecha_fin DATE,
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+);
+
+CREATE TABLE ocasional (
+    id_ocasional INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    pago_por_sesion DECIMAL(10,2),
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+);
+
+..........................
+-- TIPOS DE TRABAJADOR
+..........................
+CREATE TABLE instructor (
+    id_instructor INT AUTO_INCREMENT PRIMARY KEY,
+    id_trabajador INT NOT NULL,
+    especialidad VARCHAR(100),
+    FOREIGN KEY (id_trabajador) REFERENCES trabajador(id_trabajador)
+);
+
+CREATE TABLE recepcionista (
+    id_recepcionista INT AUTO_INCREMENT PRIMARY KEY,
+    id_trabajador INT NOT NULL,
+    turno VARCHAR(50),
+    FOREIGN KEY (id_trabajador) REFERENCES trabajador(id_trabajador)
+);
+
+CREATE TABLE mantenimiento (
+    id_mantenimiento INT AUTO_INCREMENT PRIMARY KEY,
+    id_trabajador INT NOT NULL,
+    area_asignada VARCHAR(100),
+    FOREIGN KEY (id_trabajador) REFERENCES trabajador(id_trabajador)
+);
+
+...........................
+-- ROLES Y PERMISOS
+...........................
+CREATE TABLE rol (
+    id_rol INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50)
+);
+
+CREATE TABLE permiso (
+    id_permiso INT AUTO_INCREMENT PRIMARY KEY,
+    descripcion VARCHAR(100)
+);
+
+CREATE TABLE rol_permiso (
+    id_rol INT,
+    id_permiso INT,
+    PRIMARY KEY (id_rol, id_permiso),
+    FOREIGN KEY (id_rol) REFERENCES rol(id_rol),
+    FOREIGN KEY (id_permiso) REFERENCES permiso(id_permiso)
+);
+
+CREATE TABLE trabajador_rol (
+    id_trabajador INT,
+    id_rol INT,
+    PRIMARY KEY (id_trabajador, id_rol),
+    FOREIGN KEY (id_trabajador) REFERENCES trabajador(id_trabajador),
+    FOREIGN KEY (id_rol) REFERENCES rol(id_rol)
+);
+
+...........................
+-- SERVICIOS
+...........................
+CREATE TABLE servicio (
+    id_servicio INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100),
+    descripcion VARCHAR(150),
+    costo DECIMAL(10,2)
+);
+
+CREATE TABLE clases_grupales (
+    id_clase INT AUTO_INCREMENT PRIMARY KEY,
+    id_servicio INT,
+    tipo_clase VARCHAR(50),
+    capacidad INT,
+    FOREIGN KEY (id_servicio) REFERENCES servicio(id_servicio)
+);
+
+CREATE TABLE entrenamiento_personal (
+    id_entrenamiento INT AUTO_INCREMENT PRIMARY KEY,
+    id_servicio INT,
+    duracion_min INT,
+    FOREIGN KEY (id_servicio) REFERENCES servicio(id_servicio)
+);
+
+CREATE TABLE servicio_adicional (
+    id_adicional INT AUTO_INCREMENT PRIMARY KEY,
+    id_servicio INT,
+    tipo_servicio VARCHAR(50),
+    FOREIGN KEY (id_servicio) REFERENCES servicio(id_servicio)
+);
+
+...............................
+-- AMBIENTE Y EQUIPAMIENTO
+..............................
+CREATE TABLE ambiente (
+    id_ambiente INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100),
+    capacidad INT
+);
+
+CREATE TABLE equipamiento (
+    id_equipamiento INT AUTO_INCREMENT PRIMARY KEY,
+    id_ambiente INT,
+    nombre VARCHAR(100),
+    estado VARCHAR(50),
+    FOREIGN KEY (id_ambiente) REFERENCES ambiente(id_ambiente)
+);
+
+...............................
+-- PROGRAMACIÓN Y RESERVAS
+...............................
+CREATE TABLE programacion (
+    id_programacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_servicio INT,
+    id_instructor INT,
+    id_ambiente INT,
+    fecha DATE,
+    hora_inicio TIME,
+    hora_fin TIME,
+    FOREIGN KEY (id_servicio) REFERENCES servicio(id_servicio),
+    FOREIGN KEY (id_instructor) REFERENCES instructor(id_instructor),
+    FOREIGN KEY (id_ambiente) REFERENCES ambiente(id_ambiente)
+);
+
+CREATE TABLE reserva (
+    id_reserva INT AUTO_INCREMENT PRIMARY KEY,
+    id_programacion INT,
+    id_cliente INT,
+    fecha_reserva DATE,
+    estado VARCHAR(50),
+    FOREIGN KEY (id_programacion) REFERENCES programacion(id_programacion),
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+);
+
+CREATE TABLE asistencia (
+    id_asistencia INT AUTO_INCREMENT PRIMARY KEY,
+    id_programacion INT,
+    id_cliente INT,
+    fecha DATE,
+    presente BOOLEAN,
+    FOREIGN KEY (id_programacion) REFERENCES programacion(id_programacion),
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+);
+
+.................................
+-- CONTROL Y SEGUIMIENTO
+.................................
+CREATE TABLE acceso (
+    id_acceso INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT,
+    fecha_hora DATETIME,
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+);
+
+CREATE TABLE control_entrenamiento (
+    id_control INT AUTO_INCREMENT PRIMARY KEY,
+    id_entrenamiento INT,
+    id_cliente INT,
+    id_instructor INT,
+    observaciones TEXT,
+    progreso VARCHAR(100),
+    FOREIGN KEY (id_entrenamiento) REFERENCES entrenamiento_personal(id_entrenamiento),
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente),
+    FOREIGN KEY (id_instructor) REFERENCES instructor(id_instructor)
+);
+
+CREATE TABLE seguimiento (
+    id_seguimiento INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT,
+    peso DECIMAL(5,2),
+    observaciones TEXT,
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+);
