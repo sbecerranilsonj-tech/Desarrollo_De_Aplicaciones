@@ -16,31 +16,75 @@ CREATE TABLE pais (
 CREATE TABLE tipo_donante (
     id_tipo_donante INT AUTO_INCREMENT PRIMARY KEY,
     descripcion VARCHAR(50) NOT NULL
-    -- Persona Natural / Institución
 );
 
 CREATE TABLE tipo_donacion (
     id_tipo_donacion INT AUTO_INCREMENT PRIMARY KEY,
     descripcion VARCHAR(50) NOT NULL
-    -- Monetaria / Recursos
 );
 
 CREATE TABLE estado_donacion (
     id_estado_donacion INT AUTO_INCREMENT PRIMARY KEY,
     descripcion VARCHAR(50) NOT NULL
-    -- Registrada / En Proceso / Entregada / Cancelada
 );
 
 CREATE TABLE estado_entrega (
     id_estado_entrega INT AUTO_INCREMENT PRIMARY KEY,
     descripcion VARCHAR(50) NOT NULL
-    -- Pendiente / En Ruta / Entregada
 );
 
 CREATE TABLE rol_usuario (
     id_rol INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL
-    -- Administrador / Operador / Coordinador
+);
+
+-- =====================================================
+-- ROLES DEL SISTEMA
+-- =====================================================
+
+INSERT INTO rol_usuario (nombre) VALUES
+('Administrador'),
+('Encargado Donaciones'),
+('Operador'),
+('Consulta');
+
+-- =====================================================
+-- PERMISOS DEL SISTEMA
+-- =====================================================
+
+CREATE TABLE permiso (
+    id_permiso INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(200)
+);
+
+INSERT INTO permiso (nombre, descripcion) VALUES
+('GESTIONAR_DONANTES', 'Aprobar, editar o desactivar donantes'),
+('GESTIONAR_DONACIONES', 'Registrar y modificar donaciones'),
+('GESTIONAR_COMUNIDADES', 'Aprobar comunidades receptoras'),
+('APROBAR_ENTREGAS', 'Autorizar entregas de donaciones'),
+('VER_REPORTES', 'Visualizar reportes del sistema'),
+('ADMINISTRAR_SISTEMA', 'Control total del sistema');
+
+CREATE TABLE rol_permiso (
+    id_rol INT NOT NULL,
+    id_permiso INT NOT NULL,
+    PRIMARY KEY (id_rol, id_permiso),
+    FOREIGN KEY (id_rol) REFERENCES rol_usuario(id_rol),
+    FOREIGN KEY (id_permiso) REFERENCES permiso(id_permiso)
+);
+
+-- Permisos del ENCARGADO DE DONACIONES
+INSERT INTO rol_permiso (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM rol_usuario r, permiso p
+WHERE r.nombre = 'Encargado Donaciones'
+AND p.nombre IN (
+    'GESTIONAR_DONANTES',
+    'GESTIONAR_DONACIONES',
+    'GESTIONAR_COMUNIDADES',
+    'APROBAR_ENTREGAS',
+    'VER_REPORTES'
 );
 
 -- =====================================================
@@ -56,6 +100,7 @@ CREATE TABLE donante (
     id_pais INT NOT NULL,
     id_tipo_donante INT NOT NULL,
     fecha_registro DATE NOT NULL,
+    estado BOOLEAN DEFAULT FALSE, -- aprobado por encargado
     FOREIGN KEY (id_pais) REFERENCES pais(id_pais),
     FOREIGN KEY (id_tipo_donante) REFERENCES tipo_donante(id_tipo_donante)
 );
@@ -71,6 +116,7 @@ CREATE TABLE comunidad_vulnerable (
     descripcion TEXT,
     cantidad_beneficiarios INT,
     id_pais INT NOT NULL,
+    estado BOOLEAN DEFAULT FALSE, -- aprobada por encargado
     FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
 );
 
@@ -173,7 +219,7 @@ CREATE TABLE usuario_sistema (
 );
 
 -- =====================================================
--- AUDITORÍA DEL SISTEMA
+-- AUDITORÍA
 -- =====================================================
 
 CREATE TABLE auditoria_sistema (
@@ -186,7 +232,7 @@ CREATE TABLE auditoria_sistema (
 );
 
 -- =====================================================
--- REPORTES GENERADOS
+-- REPORTES
 -- =====================================================
 
 CREATE TABLE reporte_sistema (
