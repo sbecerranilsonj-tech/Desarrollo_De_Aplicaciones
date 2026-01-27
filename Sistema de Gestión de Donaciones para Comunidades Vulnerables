@@ -1,117 +1,28 @@
--- =====================================================
--- CREACIÓN DE BASE DE DATOS
--- =====================================================
 CREATE DATABASE IF NOT EXISTS sistema_gestion_donaciones;
 USE sistema_gestion_donaciones;
 
--- =====================================================
+-- ===============================
 -- TABLAS MAESTRAS
--- =====================================================
+-- ===============================
 
 CREATE TABLE pais (
     id_pais INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL
 );
 
-CREATE TABLE tipo_donante (
-    id_tipo_donante INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE estado_entrega (
+    id_estado_entrega INT AUTO_INCREMENT PRIMARY KEY,
     descripcion VARCHAR(50) NOT NULL
 );
-
-CREATE TABLE tipo_donacion (
-    id_tipo_donacion INT AUTO_INCREMENT PRIMARY KEY,
-    descripcion VARCHAR(50) NOT NULL
-);
-
-CREATE TABLE estado_donacion (
-    id_estado_donacion INT AUTO_INCREMENT PRIMARY KEY,
-    descripcion VARCHAR(50) NOT NULL
-);
-
--- =====================================================
--- ROLES Y PERMISOS
--- =====================================================
 
 CREATE TABLE rol_usuario (
     id_rol INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL
 );
 
-INSERT INTO rol_usuario (nombre) VALUES
-('Administrador'),
-('Encargado Donaciones'),
-('Operador'),
-('Consulta');
-
-CREATE TABLE permiso (
-    id_permiso INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    descripcion VARCHAR(200)
-);
-
-INSERT INTO permiso (nombre, descripcion) VALUES
-('GESTIONAR_DONANTES', 'Aprobar y administrar donantes'),
-('GESTIONAR_DONACIONES', 'Registrar donaciones'),
-('GESTIONAR_COMUNIDADES', 'Aprobar comunidades'),
-('APROBAR_ENTREGAS', 'Autorizar entregas'),
-('GESTIONAR_CAMPANIAS', 'Crear y administrar campañas'),
-('VER_REPORTES', 'Visualizar reportes'),
-('ADMINISTRAR_SISTEMA', 'Control total');
-
-CREATE TABLE rol_permiso (
-    id_rol INT NOT NULL,
-    id_permiso INT NOT NULL,
-    PRIMARY KEY (id_rol, id_permiso),
-    FOREIGN KEY (id_rol) REFERENCES rol_usuario(id_rol),
-    FOREIGN KEY (id_permiso) REFERENCES permiso(id_permiso)
-);
-
--- =====================================================
--- USUARIOS DEL SISTEMA
--- =====================================================
-
-CREATE TABLE usuario_sistema (
-    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    usuario VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    id_rol INT NOT NULL,
-    estado BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (id_rol) REFERENCES rol_usuario(id_rol)
-);
-
--- =====================================================
--- CAMPAÑAS
--- =====================================================
-
-CREATE TABLE estado_campania (
-    id_estado_campania INT AUTO_INCREMENT PRIMARY KEY,
-    descripcion VARCHAR(50) NOT NULL
-);
-
-INSERT INTO estado_campania (descripcion) VALUES
-('Planificada'),
-('Activa'),
-('Finalizada'),
-('Cancelada');
-
-CREATE TABLE campania (
-    id_campania INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(150) NOT NULL,
-    descripcion TEXT,
-    fecha_inicio DATE NOT NULL,
-    fecha_fin DATE NOT NULL,
-    objetivo_monetario DECIMAL(12,2),
-    id_estado_campania INT NOT NULL,
-    id_usuario_creador INT NOT NULL,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_estado_campania) REFERENCES estado_campania(id_estado_campania),
-    FOREIGN KEY (id_usuario_creador) REFERENCES usuario_sistema(id_usuario)
-);
-
--- =====================================================
+-- ===============================
 -- DONANTES
--- =====================================================
+-- ===============================
 
 CREATE TABLE donante (
     id_donante INT AUTO_INCREMENT PRIMARY KEY,
@@ -119,51 +30,45 @@ CREATE TABLE donante (
     email VARCHAR(100),
     telefono VARCHAR(20),
     direccion VARCHAR(200),
+    tipo_donante VARCHAR(30) NOT NULL,
     id_pais INT NOT NULL,
-    id_tipo_donante INT NOT NULL,
     fecha_registro DATE NOT NULL,
-    estado BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (id_pais) REFERENCES pais(id_pais),
-    FOREIGN KEY (id_tipo_donante) REFERENCES tipo_donante(id_tipo_donante)
-);
-
--- =====================================================
--- COMUNIDADES VULNERABLES
--- =====================================================
-
-CREATE TABLE comunidad_vulnerable (
-    id_comunidad INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(150) NOT NULL,
-    ubicacion VARCHAR(200),
-    descripcion TEXT,
-    cantidad_beneficiarios INT,
-    id_pais INT NOT NULL,
-    estado BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
 );
 
--- =====================================================
+-- ===============================
+-- CAMPAÑAS
+-- ===============================
+
+CREATE TABLE campania (
+    id_campania INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    fecha_inicio DATE,
+    fecha_fin DATE,
+    estado VARCHAR(30) NOT NULL
+);
+
+-- ===============================
 -- DONACIONES
--- =====================================================
+-- ===============================
 
 CREATE TABLE donacion (
     id_donacion INT AUTO_INCREMENT PRIMARY KEY,
     id_donante INT NOT NULL,
-    id_tipo_donacion INT NOT NULL,
+    id_campania INT,
+    tipo_donacion VARCHAR(30) NOT NULL,
+    estado_donacion VARCHAR(30) NOT NULL,
     fecha_donacion DATE NOT NULL,
     monto DECIMAL(10,2),
     descripcion TEXT,
-    id_estado_donacion INT NOT NULL,
-    id_campania INT,
     FOREIGN KEY (id_donante) REFERENCES donante(id_donante),
-    FOREIGN KEY (id_tipo_donacion) REFERENCES tipo_donacion(id_tipo_donacion),
-    FOREIGN KEY (id_estado_donacion) REFERENCES estado_donacion(id_estado_donacion),
     FOREIGN KEY (id_campania) REFERENCES campania(id_campania)
 );
 
--- =====================================================
+-- ===============================
 -- RECURSOS DONADOS
--- =====================================================
+-- ===============================
 
 CREATE TABLE categoria_recurso_donado (
     id_categoria_recurso INT AUTO_INCREMENT PRIMARY KEY,
@@ -191,9 +96,23 @@ CREATE TABLE detalle_donacion_recurso (
     FOREIGN KEY (id_recurso) REFERENCES recurso_donado(id_recurso)
 );
 
--- =====================================================
--- LOGÍSTICA DE ENTREGA (ESTADO COMO ATRIBUTO)
--- =====================================================
+-- ===============================
+-- COMUNIDADES
+-- ===============================
+
+CREATE TABLE comunidad_vulnerable (
+    id_comunidad INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,
+    ubicacion VARCHAR(200),
+    descripcion TEXT,
+    cantidad_beneficiarios INT,
+    id_pais INT NOT NULL,
+    FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
+);
+
+-- ===============================
+-- ENTREGA DE DONACIONES
+-- ===============================
 
 CREATE TABLE entrega_donacion (
     id_entrega INT AUTO_INCREMENT PRIMARY KEY,
@@ -201,15 +120,16 @@ CREATE TABLE entrega_donacion (
     id_comunidad INT NOT NULL,
     fecha_programada DATE,
     fecha_entrega DATE,
-    estado_entrega VARCHAR(20) NOT NULL,
+    id_estado_entrega INT NOT NULL,
     observaciones TEXT,
     FOREIGN KEY (id_donacion) REFERENCES donacion(id_donacion),
-    FOREIGN KEY (id_comunidad) REFERENCES comunidad_vulnerable(id_comunidad)
+    FOREIGN KEY (id_comunidad) REFERENCES comunidad_vulnerable(id_comunidad),
+    FOREIGN KEY (id_estado_entrega) REFERENCES estado_entrega(id_estado_entrega)
 );
 
--- =====================================================
+-- ===============================
 -- VOLUNTARIOS
--- =====================================================
+-- ===============================
 
 CREATE TABLE voluntario (
     id_voluntario INT AUTO_INCREMENT PRIMARY KEY,
@@ -227,9 +147,19 @@ CREATE TABLE asignacion_voluntario_entrega (
     FOREIGN KEY (id_voluntario) REFERENCES voluntario(id_voluntario)
 );
 
--- =====================================================
--- AUDITORÍA
--- =====================================================
+-- ===============================
+-- USUARIOS Y AUDITORÍA
+-- ===============================
+
+CREATE TABLE usuario_sistema (
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    usuario VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    id_rol INT NOT NULL,
+    estado BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (id_rol) REFERENCES rol_usuario(id_rol)
+);
 
 CREATE TABLE auditoria_sistema (
     id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
@@ -237,17 +167,5 @@ CREATE TABLE auditoria_sistema (
     accion VARCHAR(200),
     tabla_afectada VARCHAR(100),
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_usuario) REFERENCES usuario_sistema(id_usuario)
-);
-
--- =====================================================
--- REPORTES
--- =====================================================
-
-CREATE TABLE reporte_sistema (
-    id_reporte INT AUTO_INCREMENT PRIMARY KEY,
-    tipo_reporte VARCHAR(100),
-    fecha_generacion DATE,
-    id_usuario INT,
     FOREIGN KEY (id_usuario) REFERENCES usuario_sistema(id_usuario)
 );
